@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  eureka-server:
+    image: eureka-server
+    container_name: eureka-server
+    build:
+      context: ./eureka-server
+    ports:
+      - "8761:8761"
+    
+
+  gateway:
+    image: gateway-service
+    container_name: gateway
+    build:
+      context: ./gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+      - db_gateway
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db_gateway:3306/gateway?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    
+
+  User-Service:
+    image: user-service
+    container_name: user-service
+    build:
+      context: ./User-Service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - db_user
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db_user:3306/user_service?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    
+
+  vehicle-service:
+    image: vehicle-service
+    container_name: vehicle-service
+    build:
+      context: ./vehicle-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - db_vehicle
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db_vehicle:3306/vehicle_service?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    
+
+  booking-service:
+    image: booking-service
+    container_name: booking-service
+    build:
+      context: ./booking-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - db_booking
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db_booking:3306/booking_service?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    
+
+  # Bases de datos MySQL para cada microservicio
+  db_gateway:
+    image: mysql:8.0.33
+    container_name: db_gateway
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gateway
+    volumes:
+      - db_gateway_data:/var/lib/mysql
+    
+
+  db_user:
+    image: mysql:8.0.33
+    container_name: db_user
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: user_service
+    volumes:
+      - db_user_data:/var/lib/mysql
+    
+
+  db_vehicle:
+    image: mysql:8.0.33
+    container_name: db_vehicle
+    ports:
+      - "3310:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: vehicle_service
+    volumes:
+      - db_vehicle_data:/var/lib/mysql
+    
+
+  db_booking:
+    image: mysql:8.0.33
+    container_name: db_booking
+    ports:
+      - "3311:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: booking_service
+    volumes:
+      - db_booking_data:/var/lib/mysql
+    
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop
+    depends_on:
+      - kafka
+    ports:
+      - "19000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:29092
+    
+
+volumes:
+  db_gateway_data:
+  db_user_data:
+  db_vehicle_data:
+  db_booking_data:
+
