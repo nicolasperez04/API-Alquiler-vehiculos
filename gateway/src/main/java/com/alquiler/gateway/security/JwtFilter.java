@@ -23,8 +23,27 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
+    private static final String[] PUBLIC_URLS = {
+            "/auth/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/webjars/**",
+            "/api-docs/**",
+            "/aggregate/**"
+    };
+
+
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+
+        if (isPublicPath(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
 
         final String authHeader = request.getHeader("Authorization");
 
@@ -60,4 +79,15 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request,response);
 
     }
+
+    private boolean isPublicPath(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        for (String publicPath : PUBLIC_URLS) {
+            if (path.startsWith(publicPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

@@ -18,12 +18,23 @@ public class SecurityConfig {
 
     private JwtFilter jwtFilter;
 
+    private final String[] PUBLIC_URLS = {
+            "/bookings",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/webjars/**",
+            "/api-docs/**"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http
                 .csrf(csrf-> csrf.disable())
                 .authorizeHttpRequests(auth-> auth
                         .requestMatchers("/bookings/**").permitAll()
+                        .requestMatchers(PUBLIC_URLS).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session-> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
